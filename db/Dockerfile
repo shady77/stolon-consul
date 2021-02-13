@@ -1,18 +1,26 @@
-FROM golang:1.14-alpine AS builder
+ARG PGVERSION=12
+FROM golang:1.14-buster AS builder
 ENV STOLON=0.16.0
-WORKDIR /dist
-RUN apk update && apk add unzip curl make \
-   && curl -o ./stolon.zip -L https://github.com/sorintlab/stolon/archive/v$STOLON.zip \
-   && unzip ./stolon.zip -d ./ \
-   && rm -f ../stolon.zip \
-   && mv ./stolon-$STOLON ./stolon \
-   && cd ./stolon \
-   && go mod download \
-   && make \
-   && ls -la /dist/stolon/bin
+RUN apt-get update && apt-get install unzip curl make -qy
+RUN curl -o ./stolon.zip -L https://github.com/sorintlab/stolon/archive/v$STOLON.zip
+RUN unzip ./stolon.zip -d ./ \
+   && rm -f ./stolon.zip \
+   && mv ./stolon-$STOLON ./stolon
+WORKDIR /go/stolon/
+RUN go mod download
+RUN make
 
-FROM shadowy/postgres-pg-cron
+FROM postgres:$PGVERSION
+ENV CLUSTER_NAME=stolon-cluster
+ENV LOG_LEVEL=debug
+ENV CONSUL_URL=http://consul.service:8500
+ENV UID=keeper
+ENV LISTEN_ADDR=keeper
+ENV PASSWORD_FILE=pgsql
+ENV REPL_PASSWORD_FILE=pgsql_repl
+RUN useradd -ms /bin/bash stolon
 EXPOSE 5432
-# copy the agola-web dist
-COPY --from=builder /dist/stolon/bin/stolon-keeper /usr/local/bin
-RUN chmod +x /usr/local/bin/stolon-keeper
+COPY --from=builder /go/stolon/bin/stolon-keeper /usr/local/bin
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/stolon-keeper /usr/local/bin/start.sh
+CMD start.sh

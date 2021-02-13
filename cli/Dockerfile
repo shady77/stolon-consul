@@ -1,17 +1,14 @@
 FROM golang:1.14-alpine AS builder
 ENV STOLON=0.16.0
-WORKDIR /dist
-RUN apk update && apk add unzip curl make \
-   && curl -o ./stolon.zip -L https://github.com/sorintlab/stolon/archive/v$STOLON.zip \
-   && unzip ./stolon.zip -d ./ \
-   && rm -f ../stolon.zip \
-   && mv ./stolon-$STOLON ./stolon \
-   && cd ./stolon \
-   && go mod download \
-   && make \
-   && ls -la /dist/stolon/bin
+RUN apk update && apk add unzip curl make
+RUN curl -o ./stolon.zip -L https://github.com/sorintlab/stolon/archive/v$STOLON.zip
+RUN unzip ./stolon.zip -d ./ \
+   && rm -f ./stolon.zip \
+   && mv ./stolon-$STOLON ./stolon
+WORKDIR /go/stolon/
+RUN go mod download
+RUN make
 
 FROM alpine
-# copy the agola-web dist
-COPY --from=builder /dist/stolon/bin/stolonctl /usr/local/bin
+COPY --from=builder /go/stolon/bin/stolonctl /usr/local/bin
 RUN chmod +x /usr/local/bin/stolonctl
