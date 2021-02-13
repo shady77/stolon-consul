@@ -15,6 +15,6 @@ ENV LOG_LEVEL=debug
 ENV CONSUL_URL=http://consul.service:8500
 EXPOSE 5432
 COPY --from=builder /go/stolon/bin/stolon-proxy /usr/local/bin
-COPY start.sh /usr/local/bin/start.sh
+COPY ./proxy/start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/stolon-proxy /usr/local/bin/start.sh
 CMD start.sh

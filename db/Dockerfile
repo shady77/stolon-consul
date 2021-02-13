@@ -21,6 +21,6 @@ ENV REPL_PASSWORD_FILE=pgsql_repl
 RUN useradd -ms /bin/bash stolon
 EXPOSE 5432
 COPY --from=builder /go/stolon/bin/stolon-keeper /usr/local/bin
-COPY start.sh /usr/local/bin/start.sh
+COPY ./db/start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/stolon-keeper /usr/local/bin/start.sh
 CMD start.sh
